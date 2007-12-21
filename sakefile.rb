@@ -25,7 +25,7 @@ $comp = Sake::Component.new(:target_type => :pyd,
                             :name => "xml library for PyS60",
                             :version => [1, 9],
                             :uid_v8 => COMP_UID,
-                            :caps => [])
+                            :caps => Sake::ALL_CAPS)
 
 class Sake::Component
   def group_dir
