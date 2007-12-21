@@ -8,6 +8,10 @@
 # See also makefile.rb, which has useful utilities for reconstructing
 # the source code, for instance.
 
+# We could otherwise simply use a 0 value
+# (as Python imports should be purely name-based),
+# but SIS file prerequisites do require a UID,
+# so we are using a UID allocated from Symbian.
 COMP_NAME = "pyexpat"
 COMP_UID = 0x10206ba2 # allocated from Symbian
 MAJOR_VERSION = 1
@@ -16,12 +20,18 @@ VERSION_STRING = '%d.%02d' % [MAJOR_VERSION, MINOR_VERSION]
 
 require 'sake1/component'
 
-$comp = Sake::Component.new(:target_type => :dll,
+$comp = Sake::Component.new(:target_type => :pyd,
                             :basename => 'pyexpat',
                             :name => "xml library for PyS60",
                             :version => [1, 9],
                             :uid_v8 => COMP_UID,
                             :caps => [])
+
+class Sake::Component
+  def group_dir
+    @dir
+  end
+end
 
 require 'build/with'
 

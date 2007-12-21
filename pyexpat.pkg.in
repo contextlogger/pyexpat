@@ -1,0 +1,62 @@
+#{"<%= build.component.name %>"}, (<%= build.uid3.chex_string %>), <%= build.major_version %>, <%= build.minor_version %>, 0
+
+<% if build.v9? %>
+;; In S60 3rd ed SDKs, vendor name(s) are required.
+;; Apparently both unique and localized versions.
+
+;Localised Vendor name
+%{"<%= build.component.vendor %>-EN"}
+
+;Unique Vendor name
+:"<%= build.component.vendor %>"
+<% end %>
+
+;; Platform dependency.
+<%= build.target.pkg_dependency_string %>
+
+;;;
+;;; license
+;;;
+; "doc\COPYING" - "", FILETEXT, TEXTCONTINUE
+
+;;;
+;;; native extension (includes Expat)
+;;;
+<% if build.v9? %>
+"pyexpat.pyd" - "!:\sys\bin\pyexpat.pyd"
+<% else %>
+"pyexpat.pyd" - "!:\system\libs\pyexpat.pyd"
+<% end %>
+
+<% pylibdir = "..\\..\\pyexpat-2.2.3-patched\\python-lib" %>
+<% tpylibdir = "!:\\python\\lib" %>
+
+;;;
+;;; standard Python XML library
+;;;
+"<%= pylibdir %>\xml\dom\domreg.py" -
+"<%= tpylibdir %>\xml\dom\domreg.py"
+"<%= pylibdir %>\xml\dom\minidom.py" -
+"<%= tpylibdir %>\xml\dom\minidom.py"
+"<%= pylibdir %>\xml\dom\pulldom.py" -
+"<%= tpylibdir %>\xml\dom\pulldom.py"
+"<%= pylibdir %>\xml\dom\__init__.py" -
+"<%= tpylibdir %>\xml\dom\__init__.py"
+"<%= pylibdir %>\xml\parsers\expat.py" -
+"<%= tpylibdir %>\xml\parsers\expat.py"
+"<%= pylibdir %>\xml\parsers\__init__.py" -
+"<%= tpylibdir %>\xml\parsers\__init__.py"
+"<%= pylibdir %>\xml\sax\expatreader.py" -
+"<%= tpylibdir %>\xml\sax\expatreader.py"
+"<%= pylibdir %>\xml\sax\handler.py" -
+"<%= tpylibdir %>\xml\sax\handler.py"
+"<%= pylibdir %>\xml\sax\saxutils.py" -
+"<%= tpylibdir %>\xml\sax\saxutils.py"
+"<%= pylibdir %>\xml\sax\xmlreader.py" -
+"<%= tpylibdir %>\xml\sax\xmlreader.py"
+"<%= pylibdir %>\xml\sax\_exceptions.py" -
+"<%= tpylibdir %>\xml\sax\_exceptions.py"
+"<%= pylibdir %>\xml\sax\__init__.py" -
+"<%= tpylibdir %>\xml\sax\__init__.py"
+"<%= pylibdir %>\xml\__init__.py" -
+"<%= tpylibdir %>\xml\__init__.py"

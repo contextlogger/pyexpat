@@ -1,0 +1,9 @@
+PRJ_PLATFORMS
+<% if build.v9? %>
+winscw gcce
+<% else %>
+wins thumb armi
+<% end %>
+
+PRJ_MMPFILES
+pyexpat.mmp

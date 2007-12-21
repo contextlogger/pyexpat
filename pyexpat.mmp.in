@@ -1,0 +1,56 @@
+targettype 	dll
+
+target          pyexpat.pyd
+
+<% unless build.v9? %>
+targetpath      \system\libs\
+<% end %>
+
+uid             <%= build.uid2.chex_string %> <%= build.uid3.chex_string %>
+
+EXPORTUNFROZEN
+
+<% edir = "..\\..\\expat-1.95.8-patched"
+   pdir = "..\\..\\pyexpat-2.2.3-patched" %>
+
+SYSTEMINCLUDE   \epoc32\include
+systeminclude 	\epoc32\include\libc
+SYSTEMINCLUDE   \epoc32\include\python
+systeminclude   <%= pdir %>\inc
+
+userinclude	<%= pdir %>\inc
+userinclude 	<%= edir %>\lib
+
+sourcepath 	<%= pdir %>\src
+source		dllentry.cpp
+source 		pyexpat.cpp
+
+<% if build.trait_map[:do_logging] %>
+source		logging.cpp
+<% end %>
+
+sourcepath 	<%= edir %>\lib
+source      	xmlparse.c  
+source      	xmlrole.c
+source      	xmltok.c
+
+// these are actually used as includes, to grab some inline
+// code, so we do not want object files for them;
+// renamed to *.inl
+//source      	xmltok_impl.c
+//source      	xmltok_ns.c 
+
+LIBRARY 	estlib.lib 
+library 	euser.lib 
+LIBRARY 	python222.lib
+
+<% if build.trait_map[:do_logging] %>
+library		flogger.lib
+<% end %>
+
+macro		HAVE_EXPAT_H
+macro		HAVE_EXPAT_CONFIG_H
+
+<% if build.v9? %>
+CAPABILITY <%= build.caps_string %>
+<% end %>

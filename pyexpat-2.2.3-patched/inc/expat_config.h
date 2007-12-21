@@ -24,6 +24,10 @@
 #if !defined(__E32DEF_H__) && defined(NULL)
 #undef NULL
 #endif
+
+// else e32def.h gives errors w/v3.0 SDK, due to GCCE differences, maybe
+#define __REMOVE_PLATSEC_DIAGNOSTIC_STRINGS__
+
 #include <e32def.h>
 
 // Symbian is little endian
