@@ -1,0 +1,959 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.3.3: http://docutils.sourceforge.net/" />
+<title>A Description of the Symbian Port of pyexpat</title>
+<link rel="stylesheet" href="default.css" type="text/css" />
+</head>
+<body>
+<h1 class="title">A Description of the Symbian Port of <tt>pyexpat</tt></h1>
+<div class="document" id="notes-about-the-symbian-port-of-pyexpat">
+
+<p><b>Fourth Revision, 13 September 2004, by Tero Hasu</b></p>
+
+<p>This is a Symbian port of <tt class="literal"><span class="pre">pyexpat</span></tt>, and it has been tested to
+compile for Symbian without errors, using either MSVC or GCC. There
+are some warnings, but these are produced by Python header files, and
+there is little that we could have done about them.</p>
+<p>The source code for this component was taken from the Python 2.2.3 source
+tree, or more specifically from its <tt class="literal"><span
+class="pre">Modules</span></tt> directory, and modified by Kenneth
+Oksanen and the author of this paper.</p>
+<p>The motivation for the port is to allow the Python XML APIs to be used
+on Symbian OS with <em>Python for Series 60</em>. The component been
+patched to compile for Symbian OS, but not with intention to
+submit a patch to Python itself, as Python 2.2 is probably no longer
+being maintained. As this is the case, we have not attempted to
+maintain compatibility with other platforms, and the patched code
+presumably will not build for platforms other than Symbian, not unless
+further changes are made.</p>
+
+
+<p>The porting work was fairly straightforward, and no code with
+significant or patentable ideas was introduced. This document
+describes the port by summarizing the changes that were required to
+the original code, and by listing the actual changed source code.</p>
+
+
+
+<div class="section" id="affected-files">
+<h1><a name="affected-files">Change Synopses for Affected Files</a></h1>
+<div class="section" id="dllentry-cpp">
+<h2><a name="dllentry-cpp"><tt class="literal"><span class="pre">dllentry.cpp</span></tt></a></h2>
+<p>This file was added. It contains the DLL entry point only.</p>
+</div>
+<div class="section" id="expat-config-h">
+<h2><a name="expat-config-h"><tt class="literal"><span class="pre">expat_config.h</span></tt></a></h2>
+<p>This file was added, as we cannot really use the Python <tt class="literal"><span class="pre">configure</span></tt>
+script to produce a suitable configuration for Symbian.</p>
+</div>
+<div class="section" id="logging-cpp">
+<h2><a name="logging-cpp"><tt class="literal"><span class="pre">logging.cpp</span></tt></a></h2>
+<p>This file was added. It contains logging routines used for debugging.
+We probably only want to use this during development, although logging
+needs to be specifically enabled (by creating a directory) to actually
+happen. The <tt class="literal"><span class="pre">pyexpat</span></tt> code, as it presently stands, does not do any
+logging.</p>
+</div>
+<div class="section" id="pyexpat-c-pyexpat-cpp">
+<h2><a name="pyexpat-c-pyexpat-cpp"><tt class="literal"><span class="pre">pyexpat.c</span></tt> / <tt class="literal"><span class="pre">pyexpat.cpp</span></tt></a></h2>
+<p>The file <tt class="literal"><span class="pre">pyexpat.c</span></tt> was renamed as <tt class="literal"><span class="pre">pyexpat.cpp</span></tt>. This was done
+as the Symbian API is C++, and we face plenty of compilation errors if
+we try to include Symbian headers from a C source file. As we switched
+to C++, we also added some <tt class="literal"><span class="pre">extern</span> <span class="pre">&quot;C&quot;</span></tt> declarations.</p>
+<p>Added an <tt class="literal"><span class="pre">#include</span> <span class="pre">&quot;symbian_python_ext_util.h&quot;</span></tt> statement, as the
+port makes use of some of the extensions provided by Python for Series 60.</p>
+<p><tt class="literal"><span class="pre">Xmlparsetype</span></tt> is now a Python global variable rather than a native
+one; i.e. we have:</p>
+<pre class="literal-block">
+#define Xmlparsetype  ((PyTypeObject *) SPyGetGlobalString(&quot;Xmlparsetype&quot;))
+</pre>
+<p>instead of:</p>
+<pre class="literal-block">
+staticforward const PyTypeObject Xmlparsetype;
+</pre>
+<p>Other static writable data has also been dealt with, either as above,
+or by such data as function parameters, or by including into
+structures, or by simply using <tt class="literal"><span class="pre">const</span></tt> where possible. In some
+cases, as with a number of docstrings, static globals have been
+removed altogether.</p>
+<p><tt class="literal"><span class="pre">template_buffer</span></tt> is now initialized statically, instead of using an
+initializer function; this involved writing out all 256 values.</p>
+<p>Some compiler warnings caused by unused function variables have been
+fixed by commenting out the names of unused variables.</p>
+<p>The initialization code has changed quite considerably, due to the
+need to add objects into the global hash table and other Symbian OS
+quirks.</p>
+</div>
+<div class="section" id="others">
+<h2><a name="others">Others</a></h2>
+<p>Various Symbian-specific build-related files have also been added.
+This should be okay since we are not intending to submit for inclusion
+into Python proper. The code for these files is not included in the
+Appendix.</p>
+</div>
+</div>
+</div>
+
+<h1>Appendix</h1>
+
+<h2>The Entire Text for <tt>dllentry.cpp</tt></h2>
+
+<pre>
+// -*- symbian-c++ -*-
+
+#include &lt;e32std.h&gt;
+
+/** The DLL entry point.
+ */
+GLDEF_C TInt E32Dll(TDllReason)
+	{
+	return KErrNone;
+	}
+</pre>
+
+<h2>The Entire Text for <tt>expat_config.h</tt></h2>
+
+<pre>
+/* We are not using a "configure" script for Symbian builds,
+   so instead we define the configuration here. These settings
+   seem okay for Symbian 7.0s, at least.
+*/
+
+#ifndef __EXPAT_CONFIG_H__
+#define __EXPAT_CONFIG_H__
+
+#define HAVE_MEMMOVE 1
+
+#include &lt;e32def.h&gt;
+
+#endif // __EXPAT_CONFIG_H__
+</pre>
+
+<h2>The Entire Text for <tt>logging.cpp</tt></h2>
+
+<pre>
+// -*- symbian-c++ -*-
+
+#include &lt;flogger.h&gt; // flogger.lib required, Symbian 7.0-up
+
+static void Log(const TDesC8& aText)
+	{
+	RFileLogger log;
+	TInt error = log.Connect();
+	if (error)
+		{
+		return;
+		}
+	_LIT(KLogFileDir, "pyexpat");
+	_LIT(KLogFileName, "pyexpat.txt");
+	log.CreateLog(KLogFileDir, KLogFileName, 
+				  EFileLoggingModeOverwrite);
+	log.Write(aText);
+	log.Close();
+	}
+
+extern "C" void Log(const char* aText)
+	{
+	TPtrC8 ptr(reinterpret_cast&lt;const TUint8*&gt;(aText));
+	Log(ptr);
+	}
+</pre>
+
+<h2>Changes to <tt>pyexpat.c</tt> / <tt>pyexpat.cpp</tt></h2>
+
+<pre>
+--- pyexpat-2.2.3-orig/src/pyexpat.c	2004-09-09 15:49:46.000000000 +0300
++++ pyexpat-2.2.3-patched/src/pyexpat.cpp	2004-09-13 18:18:37.000000000 +0300
+@@ -1,4 +1,8 @@
+ #include "Python.h"
++#include "symbian_python_ext_util.h"
++
++extern "C" {
++
+ #if PY_VERSION_HEX &lt; 0x020000B1
+ #include &lt;assert.h&gt;
+ #endif
+@@ -69,7 +73,6 @@
+     _DummyDecl
+ };
+ 
+-static PyObject *ErrorObject;
+ 
+ /* ----------------------------------------------------- */
+ 
+@@ -85,9 +88,11 @@
+     int specified_attributes;   /* Report only specified attributes. */
+     int in_callback;            /* Is a callback active? */
+     PyObject **handlers;
++    PyCodeObject **tb_code;
++    PyObject *ErrorObject;
+ } xmlparseobject;
+ 
+-staticforward PyTypeObject Xmlparsetype;
++#define Xmlparsetype  ((PyTypeObject *) SPyGetGlobalString("Xmlparsetype"))
+ 
+ typedef void (*xmlhandlersetter)(XML_Parser self, void *meth);
+ typedef void* xmlhandler;
+@@ -96,10 +101,9 @@
+     const char *name;
+     xmlhandlersetter setter;
+     xmlhandler handler;
+-    PyCodeObject *tb_code;
+ };
+ 
+-staticforward struct HandlerInfo handler_info[64];
++extern const struct HandlerInfo handler_info[];
+ 
+ /* Set an integer attribute on the error object; return true on success,
+  * false on an exception.
+@@ -131,12 +135,12 @@
+ 
+     PyOS_snprintf(buffer, sizeof(buffer), "%.200s: line %i, column %i",
+             XML_ErrorString(code), lineno, column);
+-    err = PyObject_CallFunction(ErrorObject, "s", buffer);
++    err = PyObject_CallFunction(self-&gt;ErrorObject, "s", buffer);
+     if (  err != NULL
+           && set_error_attr(err, "code", code)
+           && set_error_attr(err, "offset", column)
+           && set_error_attr(err, "lineno", lineno)) {
+-        PyErr_SetObject(ErrorObject, err);
++        PyErr_SetObject(self-&gt;ErrorObject, err);
+     }
+     return NULL;
+ }
+@@ -302,14 +306,15 @@
+ }
+ 
+ static PyCodeObject*
+-getcode(enum HandlerTypes slot, char* func_name, int lineno)
++getcode(xmlparseobject *xmlparseobject,
++	enum HandlerTypes slot, char* func_name, int lineno)
+ {
+     PyObject *code = NULL;
+     PyObject *name = NULL;
+     PyObject *nulltuple = NULL;
+     PyObject *filename = NULL;
+ 
+-    if (handler_info[slot].tb_code == NULL) {
++    if (xmlparseobject-&gt;tb_code[slot] == NULL) {
+         code = PyString_FromString("");
+         if (code == NULL)
+             goto failed;
+@@ -320,7 +325,7 @@
+         if (nulltuple == NULL)
+             goto failed;
+         filename = PyString_FromString(__FILE__);
+-        handler_info[slot].tb_code =
++        xmlparseobject-&gt;tb_code[slot] =
+             PyCode_New(0,		/* argcount */
+                        0,		/* nlocals */
+                        0,		/* stacksize */
+@@ -338,14 +343,14 @@
+                        lineno,		/* firstlineno */
+                        code		/* lnotab */
+                        );
+-        if (handler_info[slot].tb_code == NULL)
++        if (xmlparseobject-&gt;tb_code[slot] == NULL)
+             goto failed;
+         Py_DECREF(code);
+         Py_DECREF(nulltuple);
+         Py_DECREF(filename);
+         Py_DECREF(name);
+     }
+-    return handler_info[slot].tb_code;
++    return xmlparseobject-&gt;tb_code[slot];
+  failed:
+     Py_XDECREF(code);
+     Py_XDECREF(name);
+@@ -492,7 +497,8 @@
+         }
+         /* Container is now a borrowed reference; ignore it. */
+         self-&gt;in_callback = 1;
+-        rv = call_with_frame(getcode(StartElement, "StartElement", __LINE__),
++        rv = call_with_frame(getcode(self, 
++				     StartElement, "StartElement", __LINE__),
+                              self-&gt;handlers[StartElement], args);
+         self-&gt;in_callback = 0;
+         Py_DECREF(args);
+@@ -518,7 +524,7 @@
+         args = Py_BuildValue PARAM_FORMAT ;\
+         if (!args) { flag_error(self); return RETURN;} \
+         self-&gt;in_callback = 1; \
+-        rv = call_with_frame(getcode(NAME,#NAME,__LINE__), \
++        rv = call_with_frame(getcode(self,NAME,#NAME,__LINE__), \
+                              self-&gt;handlers[NAME], args); \
+         self-&gt;in_callback = 0; \
+         Py_DECREF(args); \
+@@ -685,7 +691,8 @@
+             goto finally;
+         }
+         self-&gt;in_callback = 1;
+-        rv = call_with_frame(getcode(ElementDecl, "ElementDecl", __LINE__),
++        rv = call_with_frame(getcode(self,
++				     ElementDecl, "ElementDecl", __LINE__),
+                              self-&gt;handlers[ElementDecl], args);
+         self-&gt;in_callback = 0;
+         if (rv == NULL) {
+@@ -788,7 +795,7 @@
+ 		 STRING_CONV_FUNC,context, STRING_CONV_FUNC,base, 
+ 		 STRING_CONV_FUNC,systemId, STRING_CONV_FUNC,publicId),
+ 		rc = PyInt_AsLong(rv);, rc,
+-		XML_GetUserData(parser))
++	   (xmlparseobject *) XML_GetUserData(parser))
+ 
+ /* XXX UnknownEncodingHandler */
+ 
+@@ -830,10 +837,6 @@
+ 
+ /* ---------------------------------------------------------------- */
+ 
+-static char xmlparse_Parse__doc__[] = 
+-"Parse(data[, isfinal])\n\
+-Parse XML data.  `isfinal' should be true at end of input.";
+-
+ static PyObject *
+ xmlparse_Parse(xmlparseobject *self, PyObject *args)
+ {
+@@ -900,10 +903,6 @@
+     return len;
+ }
+ 
+-static char xmlparse_ParseFile__doc__[] = 
+-"ParseFile(file)\n\
+-Parse XML data from file-like object.";
+-
+ static PyObject *
+ xmlparse_ParseFile(xmlparseobject *self, PyObject *args)
+ {
+@@ -942,7 +941,7 @@
+             }
+         }
+         else {
+-            bytes_read = readinst(buf, BUF_SIZE, readmethod);
++            bytes_read = readinst((char *) buf, BUF_SIZE, readmethod);
+             if (bytes_read &lt; 0)
+                 return NULL;
+         }
+@@ -959,10 +958,6 @@
+     return Py_BuildValue("i", rv);
+ }
+ 
+-static char xmlparse_SetBase__doc__[] = 
+-"SetBase(base_url)\n\
+-Set the base URL for the parser.";
+-
+ static PyObject *
+ xmlparse_SetBase(xmlparseobject *self, PyObject *args)
+ {
+@@ -977,10 +972,6 @@
+     return Py_None;
+ }
+ 
+-static char xmlparse_GetBase__doc__[] = 
+-"GetBase() -&gt; url\n\
+-Return base URL string for the parser.";
+-
+ static PyObject *
+ xmlparse_GetBase(xmlparseobject *self, PyObject *args)
+ {
+@@ -991,11 +982,6 @@
+ }
+ 
+ #if EXPAT_VERSION &gt;= 0x015f00
+-static char xmlparse_GetInputContext__doc__[] =
+-"GetInputContext() -&gt; string\n\
+-Return the untranslated text of the input that caused the current event.\n\
+-If the event was generated by a large amount of text (such as a start tag\n\
+-for an element with many attributes), not all of the text may be available.";
+ 
+ static PyObject *
+ xmlparse_GetInputContext(xmlparseobject *self, PyObject *args)
+@@ -1024,11 +1010,6 @@
+ }
+ #endif
+ 
+-static char xmlparse_ExternalEntityParserCreate__doc__[] = 
+-"ExternalEntityParserCreate(context[, encoding])\n\
+-Create a parser for parsing an external entity based on the\n\
+-information passed to the ExternalEntityRefHandler.";
+-
+ static PyObject *
+ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
+ {
+@@ -1043,14 +1024,14 @@
+     }
+ 
+ #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION &lt; 6
+-    new_parser = PyObject_NEW(xmlparseobject, &Xmlparsetype);
++    new_parser = PyObject_NEW(xmlparseobject, Xmlparsetype);
+ #else
+ #ifndef Py_TPFLAGS_HAVE_GC
+     /* Python versions 1.6 to 2.1 */
+-    new_parser = PyObject_New(xmlparseobject, &Xmlparsetype);
++    new_parser = PyObject_New(xmlparseobject, Xmlparsetype);
+ #else
+     /* Python versions 2.2 and later */
+-    new_parser = PyObject_GC_New(xmlparseobject, &Xmlparsetype);
++    new_parser = PyObject_GC_New(xmlparseobject, Xmlparsetype);
+ #endif
+ #endif
+ 
+@@ -1063,6 +1044,7 @@
+     new_parser-&gt;itself = XML_ExternalEntityParserCreate(self-&gt;itself, context,
+ 							encoding);
+     new_parser-&gt;handlers = 0;
++    new_parser-&gt;tb_code = 0;
+ #ifdef Py_TPFLAGS_HAVE_GC
+     PyObject_GC_Track(new_parser);
+ #else
+@@ -1080,11 +1062,20 @@
+     for(i = 0; handler_info[i].name != NULL; i++)
+         /* do nothing */;
+ 
+-    new_parser-&gt;handlers = malloc(sizeof(PyObject *)*i);
++    new_parser-&gt;handlers = (PyObject **) malloc(sizeof(PyObject *)*i);
+     if (!new_parser-&gt;handlers) {
+         Py_DECREF(new_parser);
+         return PyErr_NoMemory();
+     }
++
++    new_parser-&gt;tb_code = (PyCodeObject **) calloc(i, sizeof(PyCodeObject *));
++    if (!new_parser-&gt;tb_code) {
++      free(new_parser-&gt;handlers);
++      new_parser-&gt;handlers = NULL;
++      Py_DECREF(new_parser);
++      return PyErr_NoMemory();
++    }
++
+     clear_handlers(new_parser, 1);
+ 
+     /* then copy handlers from self */
+@@ -1101,44 +1092,37 @@
+ 
+ #if EXPAT_VERSION &gt;= 0x010200
+ 
+-static char xmlparse_SetParamEntityParsing__doc__[] =
+-"SetParamEntityParsing(flag) -&gt; success\n\
+-Controls parsing of parameter entities (including the external DTD\n\
+-subset). Possible flag values are XML_PARAM_ENTITY_PARSING_NEVER,\n\
+-XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE and\n\
+-XML_PARAM_ENTITY_PARSING_ALWAYS. Returns true if setting the flag\n\
+-was successful.";
+-
+ static PyObject*
+ xmlparse_SetParamEntityParsing(xmlparseobject *p, PyObject* args)
+ {
+     int flag;
+     if (!PyArg_ParseTuple(args, "i", &flag))
+         return NULL;
+-    flag = XML_SetParamEntityParsing(p-&gt;itself, flag);
++    flag = (int) XML_SetParamEntityParsing(p-&gt;itself, 
++					   (enum XML_ParamEntityParsing) flag);
+     return PyInt_FromLong(flag);
+ }
+ 
+ #endif /* Expat version 1.2 or better */
+ 
+-static struct PyMethodDef xmlparse_methods[] = {
++static const struct PyMethodDef xmlparse_methods[] = {
+     {"Parse",	  (PyCFunction)xmlparse_Parse,
+-		  METH_VARARGS,	xmlparse_Parse__doc__},
++     METH_VARARGS,	0 /* xmlparse_Parse__doc__ */},
+     {"ParseFile", (PyCFunction)xmlparse_ParseFile,
+-		  METH_VARARGS,	xmlparse_ParseFile__doc__},
++     METH_VARARGS,	0 /* xmlparse_ParseFile__doc__ */},
+     {"SetBase",   (PyCFunction)xmlparse_SetBase,
+-		  METH_VARARGS,      xmlparse_SetBase__doc__},
++     METH_VARARGS, 0 /* xmlparse_SetBase__doc__ */},
+     {"GetBase",   (PyCFunction)xmlparse_GetBase,
+-		  METH_VARARGS,      xmlparse_GetBase__doc__},
++     METH_VARARGS, 0 /* xmlparse_GetBase__doc__ */},
+     {"ExternalEntityParserCreate", (PyCFunction)xmlparse_ExternalEntityParserCreate,
+-	 	  METH_VARARGS,      xmlparse_ExternalEntityParserCreate__doc__},
++     METH_VARARGS, 0 /* xmlparse_ExternalEntityParserCreate__doc__ */},
+ #if EXPAT_VERSION &gt;= 0x010200
+     {"SetParamEntityParsing", (PyCFunction)xmlparse_SetParamEntityParsing,
+-		  METH_VARARGS, xmlparse_SetParamEntityParsing__doc__},
++     METH_VARARGS, 0 /* xmlparse_SetParamEntityParsing__doc__ */},
+ #endif
+ #if EXPAT_VERSION &gt;= 0x015f00
+     {"GetInputContext", (PyCFunction)xmlparse_GetInputContext,
+-		  METH_VARARGS, xmlparse_GetInputContext__doc__},
++     METH_VARARGS, 0 /* xmlparse_GetInputContext__doc__ */},
+ #endif
+ 	{NULL,		NULL}		/* sentinel */
+ };
+@@ -1153,21 +1137,45 @@
+     Make it as simple as possible.
+ */
+ 
+-static char template_buffer[257];
+-PyObject *template_string = NULL;
++static const char template_buffer[] = {
++  '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
++  '\x08', '\x09', '\x0A', '\x0B', '\x0C', '\x0D', '\x0E', '\x0F',
++  '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17',
++  '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F',
++  '\x20', '\x21', '\x22', '\x23', '\x24', '\x25', '\x26', '\x27',
++  '\x28', '\x29', '\x2A', '\x2B', '\x2C', '\x2D', '\x2E', '\x2F',
++  '\x30', '\x31', '\x32', '\x33', '\x34', '\x35', '\x36', '\x37',
++  '\x38', '\x39', '\x3A', '\x3B', '\x3C', '\x3D', '\x3E', '\x3F',
++  '\x40', '\x41', '\x42', '\x43', '\x44', '\x45', '\x46', '\x47',
++  '\x48', '\x49', '\x4A', '\x4B', '\x4C', '\x4D', '\x4E', '\x4F',
++  '\x50', '\x51', '\x52', '\x53', '\x54', '\x55', '\x56', '\x57',
++  '\x58', '\x59', '\x5A', '\x5B', '\x5C', '\x5D', '\x5E', '\x5F',
++  '\x60', '\x61', '\x62', '\x63', '\x64', '\x65', '\x66', '\x67',
++  '\x68', '\x69', '\x6A', '\x6B', '\x6C', '\x6D', '\x6E', '\x6F',
++  '\x70', '\x71', '\x72', '\x73', '\x74', '\x75', '\x76', '\x77',
++  '\x78', '\x79', '\x7A', '\x7B', '\x7C', '\x7D', '\x7E', '\x7F',
++  '\x80', '\x81', '\x82', '\x83', '\x84', '\x85', '\x86', '\x87',
++  '\x88', '\x89', '\x8A', '\x8B', '\x8C', '\x8D', '\x8E', '\x8F',
++  '\x90', '\x91', '\x92', '\x93', '\x94', '\x95', '\x96', '\x97',
++  '\x98', '\x99', '\x9A', '\x9B', '\x9C', '\x9D', '\x9E', '\x9F',
++  '\xA0', '\xA1', '\xA2', '\xA3', '\xA4', '\xA5', '\xA6', '\xA7',
++  '\xA8', '\xA9', '\xAA', '\xAB', '\xAC', '\xAD', '\xAE', '\xAF',
++  '\xB0', '\xB1', '\xB2', '\xB3', '\xB4', '\xB5', '\xB6', '\xB7',
++  '\xB8', '\xB9', '\xBA', '\xBB', '\xBC', '\xBD', '\xBE', '\xBF',
++  '\xC0', '\xC1', '\xC2', '\xC3', '\xC4', '\xC5', '\xC6', '\xC7',
++  '\xC8', '\xC9', '\xCA', '\xCB', '\xCC', '\xCD', '\xCE', '\xCF',
++  '\xD0', '\xD1', '\xD2', '\xD3', '\xD4', '\xD5', '\xD6', '\xD7',
++  '\xD8', '\xD9', '\xDA', '\xDB', '\xDC', '\xDD', '\xDE', '\xDF',
++  '\xE0', '\xE1', '\xE2', '\xE3', '\xE4', '\xE5', '\xE6', '\xE7',
++  '\xE8', '\xE9', '\xEA', '\xEB', '\xEC', '\xED', '\xEE', '\xEF',
++  '\xF0', '\xF1', '\xF2', '\xF3', '\xF4', '\xF5', '\xF6', '\xF7',
++  '\xF8', '\xF9', '\xFA', '\xFB', '\xFC', '\xFD', '\xFE', '\xFF', 
++  '\x00'
++};
+ 
+-static void 
+-init_template_buffer(void)
+-{
+-    int i;
+-    for (i = 0; i &lt; 256; i++) {
+-	template_buffer[i] = i;
+-    }
+-    template_buffer[256] = 0;
+-}
+ 
+ int 
+-PyUnknownEncodingHandler(void *encodingHandlerData, 
++PyUnknownEncodingHandler(void * /*encodingHandlerData*/, 
+ const XML_Char *name, 
+ XML_Encoding * info)
+ {
+@@ -1203,13 +1211,15 @@
+ #endif
+ 
+ static PyObject *
+-newxmlparseobject(char *encoding, char *namespace_separator)
++// XXX could be removed
++newxmlparseobject(PyObject* /*module*/, char *encoding, 
++		  char *namespace_separator)
+ {
+     int i;
+     xmlparseobject *self;
+-	
++
+ #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION &lt; 6
+-    self = PyObject_NEW(xmlparseobject, &Xmlparsetype);
++    self = PyObject_NEW(xmlparseobject, Xmlparsetype);
+     if (self == NULL)
+         return NULL;
+ 
+@@ -1218,19 +1228,22 @@
+     /* Code for versions 1.6 and later */
+ #ifdef Py_TPFLAGS_HAVE_GC
+     /* Code for versions 2.2 and later */
+-    self = PyObject_GC_New(xmlparseobject, &Xmlparsetype);
++    self = PyObject_GC_New(xmlparseobject, Xmlparsetype);
+ #else
+-    self = PyObject_New(xmlparseobject, &Xmlparsetype);
++    self = PyObject_New(xmlparseobject, Xmlparsetype);
+ #endif
+     if (self == NULL)
+         return NULL;
+ 
+     self-&gt;returns_unicode = 1;
+ #endif
++    self-&gt;ErrorObject = //PyObject_GetAttrString(module, "error");
++	SPyGetGlobalString("pyexpaterror");
+     self-&gt;ordered_attributes = 0;
+     self-&gt;specified_attributes = 0;
+     self-&gt;in_callback = 0;
+     self-&gt;handlers = NULL;
++    self-&gt;tb_code = NULL;
+     if (namespace_separator != NULL) {
+         self-&gt;itself = XML_ParserCreateNS(encoding, *namespace_separator);
+     }
+@@ -1256,11 +1269,20 @@
+     for(i = 0; handler_info[i].name != NULL; i++)
+         /* do nothing */;
+ 
+-    self-&gt;handlers = malloc(sizeof(PyObject *)*i);
++    self-&gt;handlers = (PyObject **) malloc(sizeof(PyObject *)*i);
+     if (!self-&gt;handlers){
+-	    Py_DECREF(self);
+-	    return PyErr_NoMemory();
++      Py_DECREF(self);
++      return PyErr_NoMemory();
++    }
++
++    self-&gt;tb_code = (PyCodeObject **) calloc(i, sizeof(PyCodeObject *));
++    if (!self-&gt;tb_code){
++      free(self-&gt;handlers);
++      self-&gt;handlers = NULL;
++      Py_DECREF(self);
++      return PyErr_NoMemory();
+     }
++
+     clear_handlers(self, 1);
+ 
+     return (PyObject*)self;
+@@ -1288,6 +1310,18 @@
+             Py_XDECREF(temp);
+         }
+         free(self-&gt;handlers);
++	self-&gt;handlers = NULL;
++    }
++    if (self-&gt;tb_code) {
++      for (i = 0; handler_info[i].name; i++) {
++	PyCodeObject *temp;
++	if ((temp = self-&gt;tb_code[i]) != NULL) {
++	  self-&gt;tb_code[i] = NULL;
++	  Py_XDECREF(temp);
++	}
++      }
++      free(self-&gt;tb_code);
++      self-&gt;tb_code = NULL;
+     }
+ #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION &lt; 6
+     /* Code for versions before 1.6 */
+@@ -1342,12 +1376,12 @@
+     }
+ 
+ #define APPEND(list, str)				\
+-	do {						\
++	{						\
+ 		PyObject *o = PyString_FromString(str);	\
+ 		if (o != NULL)				\
+ 			PyList_Append(list, o);		\
+ 		Py_XDECREF(o);				\
+-	} while (0)
++	}
+ 
+     if (strcmp(name, "__members__") == 0) {
+         int i;
+@@ -1366,7 +1400,13 @@
+ #undef APPEND
+         return rc;
+     }
+-    return Py_FindMethod(xmlparse_methods, (PyObject *)self, name);
++    /* Unfortunately the Python/C API does not have all the right
++       consts, but judging from the code of Py_FindMethod,
++       const_casting the first parameter here is okay, at least
++       with the version of Python that we are building against.
++     */
++    return Py_FindMethod((PyMethodDef *)xmlparse_methods,
++			 (PyObject *)self, name);
+ }
+ 
+ static int
+@@ -1450,11 +1490,8 @@
+ }
+ #endif
+ 
+-static char Xmlparsetype__doc__[] = 
+-"XML parser";
+-
+-static PyTypeObject Xmlparsetype = {
+-	PyObject_HEAD_INIT(NULL)
++static const PyTypeObject Xmlparsetype_template = {
++    PyObject_HEAD_INIT(NULL)
+ 	0,				/*ob_size*/
+ 	"pyexpat.xmlparser",		/*tp_name*/
+ 	sizeof(xmlparseobject) + PyGC_HEAD_SIZE,/*tp_basicsize*/
+@@ -1480,7 +1517,7 @@
+ #else
+ 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/	
+ #endif
+-	Xmlparsetype__doc__, /* Documentation string */
++	0, /* Xmlparsetype__doc__, */ /* Documentation string */
+ #ifdef WITH_CYCLE_GC
+ 	(traverseproc)xmlparse_traverse,	/* tp_traverse */
+ 	(inquiry)xmlparse_clear		/* tp_clear */
+@@ -1492,16 +1529,14 @@
+ /* End of code for xmlparser objects */
+ /* -------------------------------------------------------- */
+ 
+-static char pyexpat_ParserCreate__doc__[] =
+-"ParserCreate([encoding[, namespace_separator]]) -&gt; parser\n\
+-Return a new XML parser object.";
+-
++// the first parameter is always 0 for functions,
++// and only set for methods
+ static PyObject *
+-pyexpat_ParserCreate(PyObject *notused, PyObject *args, PyObject *kw)
++pyexpat_ParserCreate(PyObject* /*module*/, PyObject *args, PyObject *kw)
+ {
+     char *encoding = NULL;
+     char *namespace_separator = NULL;
+-    static char *kwlist[] = {"encoding", "namespace_separator", NULL};
++    char *kwlist[] = {"encoding", "namespace_separator", NULL};
+ 
+     if (!PyArg_ParseTupleAndKeywords(args, kw, "|zz:ParserCreate", kwlist,
+                                      &encoding, &namespace_separator))
+@@ -1513,39 +1548,32 @@
+                         " character, omitted, or None");
+         return NULL;
+     }
+-    return newxmlparseobject(encoding, namespace_separator);
++    return newxmlparseobject(NULL /*module*/, encoding, namespace_separator);
+ }
+ 
+-static char pyexpat_ErrorString__doc__[] =
+-"ErrorString(errno) -&gt; string\n\
+-Returns string error for given number.";
+-
+ static PyObject *
+-pyexpat_ErrorString(PyObject *self, PyObject *args)
++pyexpat_ErrorString(PyObject * /*self*/, PyObject *args)
+ {
+     long code = 0;
+ 
+     if (!PyArg_ParseTuple(args, "l:ErrorString", &code))
+         return NULL;
+-    return Py_BuildValue("z", XML_ErrorString((int)code));
++    return Py_BuildValue("z", XML_ErrorString((enum XML_Error) code));
+ }
+ 
+ /* List of methods defined in the module */
+ 
+-static struct PyMethodDef pyexpat_methods[] = {
++static const struct PyMethodDef pyexpat_methods[] = {
+     {"ParserCreate",	(PyCFunction)pyexpat_ParserCreate,
+-     METH_VARARGS|METH_KEYWORDS, pyexpat_ParserCreate__doc__},
++     METH_VARARGS|METH_KEYWORDS, 0 /* pyexpat_ParserCreate__doc__ */},
+     {"ErrorString",	(PyCFunction)pyexpat_ErrorString,
+-     METH_VARARGS,	pyexpat_ErrorString__doc__},
++     METH_VARARGS, 0 /* pyexpat_ErrorString__doc__ */},
+  
+     {NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
+ };
+ 
+ /* Module docstring */
+ 
+-static char pyexpat_module_documentation[] = 
+-"Python wrapper for Expat parser.";
+-
+ #if PY_VERSION_HEX &lt; 0x20000F0
+ 
+ /* 1.5 compatibility: PyModule_AddObject */
+@@ -1587,8 +1615,8 @@
+ static PyObject *
+ get_version_string(void)
+ {
+-    static char *rcsid = "$Revision: 2.57.6.6 $";
+-    char *rev = rcsid;
++    const char *rcsid = "$Revision: 2.57.6.6 $";
++    const char *rev = rcsid;
+     int i = 0;
+ 
+     while (!isdigit(*rev))
+@@ -1603,16 +1631,17 @@
+ 
+ #ifndef MODULE_NAME
+ #define MODULE_NAME "pyexpat"
++#else
++#error was defined
+ #endif
+ 
+ #ifndef MODULE_INITFUNC
+ #define MODULE_INITFUNC initpyexpat
+ #endif
+ 
+-void MODULE_INITFUNC(void);  /* avoid compiler warnings */
++//void Log(const char* aText); // from logging.cpp
+ 
+-DL_EXPORT(void)
+-MODULE_INITFUNC(void)
++DL_EXPORT(void) MODULE_INITFUNC(void)
+ {
+     PyObject *m, *d;
+     PyObject *errmod_name = PyString_FromString(MODULE_NAME ".errors");
+@@ -1620,6 +1649,29 @@
+     PyObject *modelmod_name;
+     PyObject *model_module;
+     PyObject *sys_modules;
++    PyObject *ErrorObject;
++    PyTypeObject *xmlobj;
++
++    //Log("initpyexpat()");
++
++    /* Create the module and add the functions */
++    /* Unfortunately the Python/C API does not have all the right
++       consts, but judging from the code of Py_InitModule4,
++       const_casting the second parameter here is okay, at least
++       with the version of Python that we are building against.
++     */
++    m = Py_InitModule(MODULE_NAME, (PyMethodDef *) pyexpat_methods);
++    /* pyexpat_module_documentation */
++
++    xmlobj = PyObject_New(PyTypeObject, &PyType_Type);
++    *xmlobj = Xmlparsetype_template;
++    xmlobj-&gt;ob_type = &PyType_Type;
++    /*
++    if (PyType_Ready(xmlobj) &lt; 0)
++	return;
++    */
++    SPyAddGlobalString("Xmlparsetype", (PyObject*)xmlobj);
++    PyModule_AddObject(m, "XMLParserType", (PyObject *) Xmlparsetype);
+ 
+     if (errmod_name == NULL)
+         return;
+@@ -1627,26 +1679,18 @@
+     if (modelmod_name == NULL)
+         return;
+ 
+-    Xmlparsetype.ob_type = &PyType_Type;
+-
+-    /* Create the module and add the functions */
+-    m = Py_InitModule3(MODULE_NAME, pyexpat_methods,
+-                       pyexpat_module_documentation);
+-
+     /* Add some symbolic constants to the module */
+-    if (ErrorObject == NULL) {
+-        ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
+-                                         NULL, NULL);
+-        if (ErrorObject == NULL)
+-            return;
+-    }
++    ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
++				     NULL, NULL);
++    if (ErrorObject == NULL)
++      return;
+     Py_INCREF(ErrorObject);
+-    PyModule_AddObject(m, "error", ErrorObject);
++    //PyModule_AddObject(m, "error", ErrorObject);
++    SPyAddGlobalString("pyexpaterror", ErrorObject);
+     Py_INCREF(ErrorObject);
+     PyModule_AddObject(m, "ExpatError", ErrorObject);
+-    Py_INCREF(&Xmlparsetype);
+-    PyModule_AddObject(m, "XMLParserType", (PyObject *) &Xmlparsetype);
+-
++    /* Py_INCREF(&Xmlparsetype); I think this is unnecessary */
++	
+     PyModule_AddObject(m, "__version__", get_version_string());
+ #if EXPAT_VERSION &gt;= 0x015f02
+     PyModule_AddStringConstant(m, "EXPAT_VERSION",
+@@ -1658,9 +1702,6 @@
+                                          info.minor, info.micro));
+     }
+ #endif
+-#ifdef Py_USING_UNICODE
+-    init_template_buffer();
+-#endif
+     /* XXX When Expat supports some way of figuring out how it was
+        compiled, this should check and set native_encoding 
+        appropriately. 
+@@ -1753,6 +1794,7 @@
+ #endif
+ }
+ 
++
+ static void
+ clear_handlers(xmlparseobject *self, int initial)
+ {
+@@ -1794,7 +1836,7 @@
+ }
+ 
+ static void
+-pyxml_SetStartElementHandler(XML_Parser parser, void *junk)
++pyxml_SetStartElementHandler(XML_Parser parser, void * /*junk*/)
+ {
+     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser),
+                                StartElement, EndElement,
+@@ -1802,7 +1844,7 @@
+ }
+ 
+ static void
+-pyxml_SetEndElementHandler(XML_Parser parser, void *junk)
++pyxml_SetEndElementHandler(XML_Parser parser, void * /*junk*/)
+ {
+     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser), 
+                                StartElement, EndElement,
+@@ -1810,7 +1852,7 @@
+ }
+ 
+ static void
+-pyxml_SetStartNamespaceDeclHandler(XML_Parser parser, void *junk)
++pyxml_SetStartNamespaceDeclHandler(XML_Parser parser, void * /*junk*/)
+ {
+     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser), 
+                                StartNamespaceDecl, EndNamespaceDecl,
+@@ -1818,7 +1860,7 @@
+ }
+ 
+ static void
+-pyxml_SetEndNamespaceDeclHandler(XML_Parser parser, void *junk)
++pyxml_SetEndNamespaceDeclHandler(XML_Parser parser, void * /*junk*/)
+ {
+     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser), 
+                                StartNamespaceDecl, EndNamespaceDecl,
+@@ -1826,7 +1868,7 @@
+ }
+ 
+ static void
+-pyxml_SetStartCdataSection(XML_Parser parser, void *junk)
++pyxml_SetStartCdataSection(XML_Parser parser, void * /*junk*/)
+ {
+     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser),
+                                StartCdataSection, EndCdataSection,
+@@ -1834,7 +1876,7 @@
+ }
+ 
+ static void
+-pyxml_SetEndCdataSection(XML_Parser parser, void *junk)
++pyxml_SetEndCdataSection(XML_Parser parser, void * /*junk*/)
+ {
+     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser), 
+                                StartCdataSection, EndCdataSection, 
+@@ -1844,7 +1886,7 @@
+ #if EXPAT_VERSION &gt;= 0x010200
+ 
+ static void
+-pyxml_SetStartDoctypeDeclHandler(XML_Parser parser, void *junk)
++pyxml_SetStartDoctypeDeclHandler(XML_Parser parser, void * /*junk*/)
+ {
+     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser),
+                                StartDoctypeDecl, EndDoctypeDecl,
+@@ -1852,7 +1894,7 @@
+ }
+ 
+ static void
+-pyxml_SetEndDoctypeDeclHandler(XML_Parser parser, void *junk)
++pyxml_SetEndDoctypeDeclHandler(XML_Parser parser, void * /*junk*/)
+ {
+     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser),
+                                StartDoctypeDecl, EndDoctypeDecl,
+@@ -1861,7 +1903,7 @@
+ 
+ #endif
+ 
+-statichere struct HandlerInfo handler_info[] = {
++const struct HandlerInfo handler_info[64] = {
+     {"StartElementHandler", 
+      pyxml_SetStartElementHandler, 
+      (xmlhandler)my_StartElementHandler},
+@@ -1940,3 +1982,5 @@
+ 
+     {NULL, NULL, NULL} /* sentinel */
+ };
++
++}
+</pre>
+
+</body>
+</html>

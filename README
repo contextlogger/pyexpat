@@ -1,0 +1,35 @@
+This is the source distribution of a Symbian port of ``pyexpat``. It
+contains patches to the "mainline" versions of Expat and ``pyexpat``,
+as well as some build-related files and documentation.
+
+Prior to attempting a build, do note that
+
+  1. You need to have the full source trees of both Expat and
+     ``pyexpat`` Symbian ports. See the scripts
+     ``construct-expat-source.sh`` and ``construct-pyexpat-source.sh``
+     for information on how to reconstruct the source trees.
+
+  2. You need to have a Symbian C++ SDK installed. The software has
+     been tested to build with versions 1.2 and 2.0 of the Series 60 SDK.
+
+  3. You need to have Python header files in the location specified in
+     the ``pyexpat.mmp`` file. If not, either put them there, or edit
+     the MMP file to reflect the correct location.
+
+  4. The PKG files assume that you are using the -d switch to specify
+     the path to your chosen SDK. Alternatively, you could edit the PKG 
+     files, and specify absolute paths for all the source files.
+
+To build, simply issue the command
+
+  build
+
+or, under a Cygwin shell,
+
+  ./build.bat
+
+This will build an ARMI UREL SIS file, as well as WINS UDEB binaries.
+
+Building WINS binaries has only been tested with the MSVC compiler,
+and it is unknown whether builds would be successful also using, say,
+a Borland compiler.

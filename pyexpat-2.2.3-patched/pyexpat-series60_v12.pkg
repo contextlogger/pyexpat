@@ -1,0 +1,57 @@
+
+; We could otherwise simply use a 0 value
+; (as Python imports should be purely name-based),
+; but SIS file prerequisites do require a UID,
+; so we are using a UID allocated from Symbian.
+#{"pyexpat"}, (0x10206ba2), 1, 8, 0
+
+;;;
+;;; Series 60 v0.9
+;;;
+(0x101f6f88), 0, 0, 0, {"Series60ProductID"}
+
+;;;
+;;; Python for Series 60
+;;;
+(0x10201510), 0, 0, 0, {"Python for Series 60"}
+
+;;;
+;;; license
+;;;
+; "doc\COPYING" - "", FILETEXT, TEXTCONTINUE
+
+;;;
+;;; native extension (includes Expat)
+;;;
+"epoc32\release\armi\urel\pyexpat.pyd" -
+"!:\system\libs\pyexpat.pyd"
+
+;;;
+;;; standard Python XML library
+;;;
+"python-lib\xml\dom\domreg.py" -
+"!:\system\libs\xml\dom\domreg.py"
+"python-lib\xml\dom\minidom.py" -
+"!:\system\libs\xml\dom\minidom.py"
+"python-lib\xml\dom\pulldom.py" -
+"!:\system\libs\xml\dom\pulldom.py"
+"python-lib\xml\dom\__init__.py" -
+"!:\system\libs\xml\dom\__init__.py"
+"python-lib\xml\parsers\expat.py" -
+"!:\system\libs\xml\parsers\expat.py"
+"python-lib\xml\parsers\__init__.py" -
+"!:\system\libs\xml\parsers\__init__.py"
+"python-lib\xml\sax\expatreader.py" -
+"!:\system\libs\xml\sax\expatreader.py"
+"python-lib\xml\sax\handler.py" -
+"!:\system\libs\xml\sax\handler.py"
+"python-lib\xml\sax\saxutils.py" -
+"!:\system\libs\xml\sax\saxutils.py"
+"python-lib\xml\sax\xmlreader.py" -
+"!:\system\libs\xml\sax\xmlreader.py"
+"python-lib\xml\sax\_exceptions.py" -
+"!:\system\libs\xml\sax\_exceptions.py"
+"python-lib\xml\sax\__init__.py" -
+"!:\system\libs\xml\sax\__init__.py"
+"python-lib\xml\__init__.py" -
+"!:\system\libs\xml\__init__.py"

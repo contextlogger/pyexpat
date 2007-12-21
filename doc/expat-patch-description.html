@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.3.3: http://docutils.sourceforge.net/" />
+<title>A Description of the Patch to Expat Version 1.95.8</title>
+<link rel="stylesheet" href="default.css" type="text/css" />
+</head>
+<body>
+<h1 class="title">A Description of the Patch to Expat Version 1.95.8</h1>
+
+<div class="document" id="notes-about-the-patch-to-expat-version-1-95-8">
+
+
+<p><b>Second Revision, 8 September 2004, by Tero Hasu</b></p>
+
+<p>The purpose of the patch is to allow Expat to be compiled for Symbian
+without warnings, using either MSVC or GCC. The patch is not intended
+to affect support for other platforms or compilers.</p>
+
+<p>Not all of the changes in the patch are necessary if one does not
+mind having a large number of compiler and linker warnings. For a
+minimal patch that still allows building for Symbian, probably only
+the constness changes are necessary; without them, the <tt
+class="literal"><span class="pre">petran</span></tt> tool will
+complain about &quot;initialised data&quot;. WINS builds would appear
+to be possible without any changes at all.</p>
+
+<p>The patch is very straightforward, without any
+significant or patentable ideas. This document describes the patch by
+summarizing the changes, and by listing the actual changed source code.</p>
+
+<div class="section" id="affected-files">
+<h1><a name="affected-files">Change Synopses for Affected Files</a></h1>
+<div class="section" id="expat-external-h">
+<h2><a name="expat-external-h"><tt class="literal"><span class="pre">expat_external.h</span></tt></a></h2>
+
+
+<p>Changed a <tt class="literal"><span class="pre">#define</span></tt> declaration so that <tt class="literal"><span class="pre">XML_USE_MSC_EXTENSIONS</span></tt>
+is not defined in Symbian builds; if present, the definition causes
+linker warnings when compiling for WINS using MSVC. Something to keep
+in mind here is that just because we are using MSVC does not
+necessarily mean that we are compiling for Windows.</p>
+</div>
+
+
+<div class="section" id="xmlparse-c">
+<h2><a name="xmlparse-c"><tt class="literal"><span class="pre">xmlparse.c</span></tt></a></h2>
+<p>Added pragma(s) to remove excessive warnings when using MSVC.</p>
+<p>Added some <tt class="literal"><span class="pre">const</span></tt> declarations to remove static globals. The
+<tt class="literal"><span class="pre">features</span></tt> table is now a constant, also, and uses <tt class="literal"><span class="pre">sizeof</span></tt> in the
+declaration -- hopefully this is okay with all compilers.</p>
+<p>Added some casts to remove warnings.</p>
+<p>Initialized <tt class="literal"><span class="pre">enum</span> <span class="pre">XML_Error</span></tt> result likewise to avoid a warning.</p>
+</div>
+
+<div class="section" id="xmlrole-c">
+<h2><a name="xmlrole-c"><tt class="literal"><span class="pre">xmlrole.c</span></tt></a></h2>
+<p>Added pragma(s) to remove excessive warnings when using MSVC.</p>
+<p>Added an extra <tt class="literal"><span class="pre">const</span></tt> declaration, for <tt class="literal"><span class="pre">types</span></tt>.</p>
+</div>
+
+
+
+<div class="section" id="xmltok-c">
+<h2><a name="xmltok-c"><tt class="literal"><span class="pre">xmltok.c</span></tt></a></h2>
+<p>Added pragma(s) to remove excessive warnings when using MSVC.</p>
+<p>Changed the <tt class="literal"><span class="pre">.c</span></tt> includes to <tt class="literal"><span class="pre">.inl</span></tt> includes, to account for the
+renamed source files.</p>
+<p>Added some <tt class="literal"><span class="pre">const</span></tt> declarations to remove static globals.</p>
+</div>
+
+
+
+<div class="section" id="xmltok-impl-c-xmltok-impl-inl">
+<h2><a name="xmltok-impl-c-xmltok-impl-inl"><tt class="literal"><span class="pre">xmltok_impl.c</span></tt> / <tt class="literal"><span class="pre">xmltok_impl.inl</span></tt></a></h2>
+<p>The file <tt class="literal"><span class="pre">xmltok_impl.c</span></tt> was renamed as <tt class="literal"><span class="pre">xmltok_impl.inl</span></tt>, as the
+Symbian build system (or MSVC, rather) appeared to be confused by
+included <tt class="literal"><span class="pre">*.c</span></tt> files.</p>
+<p>Added a directive to tell Emacs the file type since the extension no
+longer reveals it.</p>
+<p>Added pragma(s) to remove excessive warnings when using MSVC.</p>
+</div>
+
+
+
+
+
+
+<div class="section" id="xmltok-ns-c-xmltok-ns-inl">
+<h2><a name="xmltok-ns-c-xmltok-ns-inl"><tt class="literal"><span class="pre">xmltok_ns.c</span></tt> / <tt class="literal"><span class="pre">xmltok_ns.inl</span></tt></a></h2>
+<p>The file <tt class="literal"><span class="pre">xmltok_ns.c</span></tt> was renamed as <tt class="literal"><span class="pre">xmltok_ns.inl</span></tt>, as the
+Symbian build system (or MSVC, rather) appeared to be confused by
+included <tt class="literal"><span class="pre">*.c</span></tt> files.</p>
+<p>Added a directive to tell Emacs the file type since the extension no
+longer reveals it.</p>
+<p>Added an extra <tt class="literal"><span class="pre">const</span></tt> declaration, for <tt class="literal"><span class="pre">NS</span></tt>.</p>
+</div>
+
+
+
+</div>
+</div>
+
+
+
+<h1>Appendix</h1>
+
+<h2>Changes to <tt>expat_external.h</tt></h2>
+
+<pre>
+--- expat-1.95.8-orig/lib/expat_external.h	2004-09-02 13:08:53.000000000 +0300
++++ expat-1.95.8-patched/lib/expat_external.h	2004-09-02 18:52:21.000000000 +0300
+@@ -4,7 +4,7 @@
+ 
+ /* External API definitions */
+ 
+-#if defined(_MSC_EXTENSIONS) && !defined(__BEOS__) && !defined(__CYGWIN__)
++#if defined(_MSC_EXTENSIONS) && !defined(__BEOS__) && !defined(__CYGWIN__) && !defined(__SYMBIAN32__)
+ #define XML_USE_MSC_EXTENSIONS 1
+ #endif
+</pre>
+
+
+<h2>Changes to <tt>xmlparse.c</tt></h2>
+
+<pre>
+--- expat-1.95.8-orig/lib/xmlparse.c	2004-09-02 13:08:53.000000000 +0300
++++ expat-1.95.8-patched/lib/xmlparse.c	2004-09-02 18:52:21.000000000 +0300
+@@ -8,6 +8,11 @@
+ 
+ #define XML_BUILDING_EXPAT 1
+ 
++#ifdef __VC32__
++/* unreferenced formal parameter */
++#pragma warning( disable : 4100 )
++#endif
++
+ #ifdef COMPILED_FROM_DSP
+ #include "winconfig.h"
+ #elif defined(MACOS_CLASSIC)
+@@ -1158,7 +1163,7 @@
+   /* block after XML_Parse()/XML_ParseBuffer() has been called */
+   if (parsing == XML_PARSING || parsing == XML_SUSPENDED)
+     return;
+-  ns_triplets = do_nst ? XML_TRUE : XML_FALSE;
++  ns_triplets = (XML_Bool)(do_nst ? XML_TRUE : XML_FALSE);
+ }
+ 
+ void XMLCALL
+@@ -1467,7 +1472,7 @@
+   else if (bufferPtr == bufferEnd) {
+     const char *end;
+     int nLeftOver;
+-    enum XML_Error result;
++    enum XML_Error result = XML_ERROR_NONE; /* initialized to avoid a compiler warning, i.e. used w/o init warning */
+     parseEndByteIndex += len;
+     positionPtr = s;
+     finalBuffer = (XML_Bool)isFinal;
+@@ -1491,6 +1496,8 @@
+           parsing = XML_FINISHED;
+           return result;
+         }
++      case XML_FINISHED: /* added to avoid a compilation warning */
++	break;
+       }
+     }
+ 
+@@ -1836,7 +1843,7 @@
+ const XML_LChar * XMLCALL
+ XML_ErrorString(enum XML_Error code)
+ {
+-  static const XML_LChar *message[] = {
++  static const XML_LChar* const message[] = {
+     0,
+     XML_L("out of memory"),
+     XML_L("syntax error"),
+@@ -1916,9 +1923,9 @@
+ const XML_Feature * XMLCALL
+ XML_GetFeatureList(void)
+ {
+-  static XML_Feature features[] = {
+-    {XML_FEATURE_SIZEOF_XML_CHAR,  XML_L("sizeof(XML_Char)"), 0},
+-    {XML_FEATURE_SIZEOF_XML_LCHAR, XML_L("sizeof(XML_LChar)"), 0},
++  static const XML_Feature features[] = {
++    {XML_FEATURE_SIZEOF_XML_CHAR,  XML_L("sizeof(XML_Char)"), sizeof(XML_Char)},
++    {XML_FEATURE_SIZEOF_XML_LCHAR, XML_L("sizeof(XML_LChar)"), sizeof(XML_LChar)},
+ #ifdef XML_UNICODE
+     {XML_FEATURE_UNICODE,          XML_L("XML_UNICODE"), 0},
+ #endif
+@@ -1938,8 +1945,6 @@
+     {XML_FEATURE_END,              NULL, 0}
+   };
+ 
+-  features[0].value = sizeof(XML_Char);
+-  features[1].value = sizeof(XML_LChar);
+   return features;
+ }
+ 
+@@ -4075,7 +4080,7 @@
+             /* if we have a parent parser or are reading an internal parameter
+                entity, then the entity declaration is not considered "internal"
+             */
+-            declEntity-&gt;is_internal = !(parentParser || openInternalEntities);
++            declEntity-&gt;is_internal = (XML_Bool)(!(parentParser || openInternalEntities));
+             if (entityDeclHandler)
+               handleDefault = XML_FALSE;
+           }
+@@ -4805,15 +4810,15 @@
+            otherwise call the default handler (if called from content)
+         */
+         if (pool == &dtd-&gt;pool)  /* are we called from prolog? */
+-          checkEntityDecl =
++          checkEntityDecl = (char)(
+ #ifdef XML_DTD
+               prologState.documentEntity &&
+ #endif /* XML_DTD */
+               (dtd-&gt;standalone
+                ? !openInternalEntities
+-               : !dtd-&gt;hasParamEntityRefs);
++               : !dtd-&gt;hasParamEntityRefs));
+         else /* if (pool == &tempPool): we are called from content */
+-          checkEntityDecl = !dtd-&gt;hasParamEntityRefs || dtd-&gt;standalone;
++          checkEntityDecl = (char)(!dtd-&gt;hasParamEntityRefs || dtd-&gt;standalone);
+         if (checkEntityDecl) {
+           if (!entity)
+             return XML_ERROR_UNDEFINED_ENTITY;
+@@ -5784,7 +5789,7 @@
+ 
+     /* check for overflow (table is half full) */
+     if (table-&gt;used &gt;&gt; (table-&gt;power - 1)) {
+-      unsigned char newPower = table-&gt;power + 1;
++      unsigned char newPower = (unsigned char)(table-&gt;power + 1);
+       size_t newSize = (size_t)1 &lt;&lt; newPower;
+       unsigned long newMask = (unsigned long)newSize - 1;
+       size_t tsize = newSize * sizeof(NAMED *);
+</pre>
+
+
+
+<h2>Changes to <tt>xmlrole.c</tt></h2>
+
+<pre>
+--- expat-1.95.8-orig/lib/xmlrole.c	2004-09-02 13:08:53.000000000 +0300
++++ expat-1.95.8-patched/lib/xmlrole.c	2004-09-02 18:52:21.000000000 +0300
+@@ -2,6 +2,10 @@
+    See the file COPYING for copying permission.
+ */
+ 
++#ifdef __VC32__
++/* unreferenced formal parameter */
++#pragma warning( disable : 4100 )
++#endif
++
+ #include &lt;stddef.h&gt;
+ 
+ #ifdef COMPILED_FROM_DSP
+@@ -793,7 +797,7 @@
+     return XML_ROLE_ATTLIST_NONE;
+   case XML_TOK_NAME:
+     {
+-      static const char *types[] = {
++      static const char* const types[] = {
+         KW_CDATA,
+         KW_ID,
+         KW_IDREF,
+</pre>
+
+
+
+<h2>Changes to <tt>xmltok.c</tt></h2>
+
+<pre>
+--- expat-1.95.8-orig/lib/xmltok.c	2004-09-02 13:08:53.000000000 +0300
++++ expat-1.95.8-patched/lib/xmltok.c	2004-09-02 18:52:21.000000000 +0300
+@@ -2,6 +2,13 @@
+    See the file COPYING for copying permission.
+ */
+ 
++#ifdef __VC32__
++/* constant conditional expressions */
++#pragma warning( disable : 4100 )
++/* conversions with possible loss of data */
++#pragma warning( disable : 4244 )
++#endif
++
+ #include &lt;stddef.h&gt;
+ 
+ #ifdef COMPILED_FROM_DSP
+@@ -293,7 +300,7 @@
+ #endif
+ 
+ #define PREFIX(ident) normal_ ## ident
+-#include "xmltok_impl.c"
++#include "xmltok_impl.inl"
+ 
+ #undef MINBPC
+ #undef BYTE_TYPE
+@@ -690,7 +697,7 @@
+ #define IS_NMSTRT_CHAR(enc, p, n) (0)
+ #define IS_NMSTRT_CHAR_MINBPC(enc, p) LITTLE2_IS_NMSTRT_CHAR_MINBPC(enc, p)
+ 
+-#include "xmltok_impl.c"
++#include "xmltok_impl.inl"
+ 
+ #undef MINBPC
+ #undef BYTE_TYPE
+@@ -829,7 +836,7 @@
+ #define IS_NMSTRT_CHAR(enc, p, n) (0)
+ #define IS_NMSTRT_CHAR_MINBPC(enc, p) BIG2_IS_NMSTRT_CHAR_MINBPC(enc, p)
+ 
+-#include "xmltok_impl.c"
++#include "xmltok_impl.inl"
+ 
+ #undef MINBPC
+ #undef BYTE_TYPE
+@@ -1451,7 +1458,7 @@
+ static int FASTCALL
+ getEncodingIndex(const char *name)
+ {
+-  static const char *encodingNames[] = {
++  static const char* const encodingNames[] = {
+     KW_ISO_8859_1,
+     KW_US_ASCII,
+     KW_UTF_8,
+@@ -1484,7 +1491,7 @@
+ 
+ 
+ static int
+-initScan(const ENCODING **encodingTable,
++initScan(const ENCODING* const *encodingTable,
+          const INIT_ENCODING *enc,
+          int state,
+          const char *ptr,
+@@ -1608,7 +1615,7 @@
+ 
+ #define NS(x) x
+ #define ns(x) x
+-#include "xmltok_ns.c"
++#include "xmltok_ns.inl"
+ #undef NS
+ #undef ns
+ 
+@@ -1617,7 +1624,7 @@
+ #define NS(x) x ## NS
+ #define ns(x) x ## _ns
+ 
+-#include "xmltok_ns.c"
++#include "xmltok_ns.inl"
+ 
+ #undef NS
+ #undef ns
+</pre>
+
+
+
+
+
+<h2>Changes to <tt>xmltok_impl.c</tt> / <tt>xmltok_impl.inl</tt></h2>
+
+
+<pre>
+--- expat-1.95.8-orig/lib/xmltok_impl.c 2004-09-03 16:14:02.000000000 +0300
++++ expat-1.95.8-patched/lib/xmltok_impl.inl    2004-09-03 16:14:03.000000000 +0300
+@@ -1,7 +1,14 @@
++/* -*- c -*- */
++
+ /* Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
+    See the file COPYING for copying permission.
+ */
+ 
++#ifdef __VC32__
++/* conditional expression is constant */
++#pragma warning( disable : 4127 )
++#endif
++
+ #ifndef IS_INVALID_CHAR
+ #define IS_INVALID_CHAR(enc, ptr, n) (0)
+ #endif
+</pre>
+
+
+
+
+<h2>Changes to <tt>xmltok_ns.c</tt> / <tt>xmltok_ns.inl</tt></h2>
+
+
+<pre>
+--- expat-1.95.8-orig/lib/xmltok_ns.c   2004-09-03 16:14:02.000000000 +0300
++++ expat-1.95.8-patched/lib/xmltok_ns.inl      2004-09-03 16:14:04.000000000 +0300
+@@ -1,3 +1,5 @@
++/* -*- c -*- */
++
+ const ENCODING *
+ NS(XmlGetUtf8InternalEncoding)(void)
+ {
+@@ -19,7 +21,7 @@
+ #endif
+ }
+ 
+-static const ENCODING *NS(encodings)[] = {
++static const ENCODING* const NS(encodings)[] = {
+   &ns(latin1_encoding).enc,
+   &ns(ascii_encoding).enc,
+   &ns(utf8_encoding).enc,
+</pre>
+
+
+</body>
+</html>
+
+
+

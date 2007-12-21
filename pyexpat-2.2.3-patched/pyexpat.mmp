@@ -1,0 +1,50 @@
+TARGET		pyexpat.pyd
+targettype 	dll
+targetpath      \system\libs\
+
+UID             0x1000008d 0x10206ba2
+//EPOCCALLDLLENTRYPOINTS
+
+// I guess we must do an abld freeze or something for this
+//EXPORTUNFROZEN
+NOSTRICTDEF
+#if defined(WINS)
+DEFFILE		.\pyexpat-wins.frz
+#else if define(ARM)
+DEFFILE		.\pyexpat-arm.frz
+#endif
+
+systeminclude 	\epoc32\include
+systeminclude 	\epoc32\include\libc
+userinclude 	\epoc32\..\python-port-s60\symbian_python\symbian
+userinclude 	\epoc32\..\python-port-s60\symbian_python\include
+userinclude 	\epoc32\..\python-port-s60\symbian_python\python
+systeminclude   inc
+
+userinclude	inc
+userinclude 	..\expat-1.95.8-patched\lib
+
+sourcepath 	src
+source		dllentry.cpp
+source		logging.cpp
+source 		pyexpat.cpp
+
+sourcepath 	..\expat-1.95.8-patched\lib
+source      	xmlparse.c  
+source      	xmlrole.c
+source      	xmltok.c
+
+// these are actually used as includes, to grab some inline
+// code, so we do not want object files for them;
+// renamed to *.inl
+//source      	xmltok_impl.c
+//source      	xmltok_ns.c 
+
+LIBRARY 	estlib.lib 
+library 	euser.lib 
+//library 	efsrv.lib
+LIBRARY 	python222.lib
+library		flogger.lib
+
+macro		HAVE_EXPAT_H
+macro		HAVE_EXPAT_CONFIG_H
