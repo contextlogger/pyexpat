@@ -14,9 +14,6 @@
 # so we are using a UID allocated from Symbian.
 COMP_NAME = "pyexpat"
 COMP_UID = 0x10206ba2 # allocated from Symbian
-MAJOR_VERSION = 1
-MINOR_VERSION = 8
-VERSION_STRING = '%d.%02d' % [MAJOR_VERSION, MINOR_VERSION]
 
 require 'sake1/component'
 
@@ -110,3 +107,39 @@ Sake::Tasks::def_clean_tasks(:builds => $builds)
 task :all => [:makefiles, :bin, :sis]
 
 Sake::Tasks::force_uncurrent_on_op_change
+
+task :web do
+  srcfiles = Dir['web/*.txt2tags.txt']
+  for srcfile in srcfiles
+    htmlfile = srcfile.sub(/\.txt2tags\.txt$/, ".html")
+    sh("tools/txt2tags --target xhtml --infile %s --outfile %s --encoding utf-8 --verbose" % [srcfile, htmlfile])
+  end
+end
+
+task :upload do
+  ruby("local/upload.rb")
+end
+
+task :upload_dry do
+  ruby("local/upload.rb", "dry")
+end
+
+def sis_info opt
+  for build in $builds
+    if build.short_sisx_file.exist?
+      sh("sisinfo -f #{build.short_sisx_file} #{opt}")
+    end
+  end
+end
+
+task :sis_ls do
+  sis_info "-i"
+end
+
+task :sis_cert do
+  sis_info "-c"
+end
+
+task :sis_struct do
+  sis_info "-s"
+end
