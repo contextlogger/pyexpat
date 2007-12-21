@@ -5,7 +5,7 @@
 ;; Apparently both unique and localized versions.
 
 ;Localised Vendor name
-%{"<%= build.component.vendor %>-EN"}
+%{"<%= build.component.vendor %>"}
 
 ;Unique Vendor name
 :"<%= build.component.vendor %>"

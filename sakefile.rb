@@ -18,6 +18,7 @@ COMP_UID = 0x10206ba2 # allocated from Symbian
 require 'sake1/component'
 
 $comp = Sake::Component.new(:target_type => :pyd,
+                            :vendor => "HIIT",
                             :basename => 'pyexpat',
                             :name => "xml library for PyS60",
                             :version => [1, 9],
