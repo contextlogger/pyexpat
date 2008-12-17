@@ -109,6 +109,39 @@ task :all => [:makefiles, :bin, :sis]
 
 Sake::Tasks::force_uncurrent_on_op_change
 
+class Array
+  def hjoin
+    self.join('-')
+  end
+end
+
+def sh_noerr(command)
+  puts command
+  system(command)
+end
+
+def make_patch(dir, basename, version)
+  sfile = [basename, version, 'orig'].hjoin
+  tfile = [basename, version, 'patched'].hjoin
+  pfile = File.join(dir, ['patch', basename, version].hjoin)
+  raise unless File.directory?(sfile)
+  raise unless File.directory?(tfile)
+  sh_noerr("diff -r -u -N --strip-trailing-cr #{sfile} #{tfile} > #{pfile}")
+end
+
+task :patches do
+  patch_home = "patchfiles"
+  mkdir_p patch_home
+  list = Dir['*-*-patched']
+  list.each do |pdir|
+    if pdir =~ /(.*)-(.*)-patched/
+      make_patch(patch_home, $1, $2)
+    else
+      raise
+    end
+  end  
+end
+
 task :web do
   srcfiles = Dir['web/*.txt2tags.txt']
   for srcfile in srcfiles
