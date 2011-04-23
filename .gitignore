@@ -7,4 +7,6 @@ _darcs/
 build/
 local/
 patchfiles/
+web/*.css
+web/*.html
 
