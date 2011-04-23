@@ -1,0 +1,10 @@
+*~
+\#*
+.\#*
+*.swp
+.DS_Store
+_darcs/
+build/
+local/
+patchfiles/
+
