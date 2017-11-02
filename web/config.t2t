@@ -11,5 +11,5 @@
 %!postproc(xhtml): 'Cxx' 'C++'
 %!postproc(xhtml): '{{{(.*?)}}}' '<\1>'
 %!postproc(xhtml): '<head>' '<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/><link rel="shortcut icon" href="http://www.hiit.fi/sites/all/themes/hiit/favicon.ico" type="image/x-icon" /><link rel="stylesheet" href="hiit.css" type="text/css" />'
-%!postproc(xhtml): '<body bgcolor="white" text="black">' '<body><table class="navi"><tr><th>Go to</th></td><tr><td><a href="http://contextlogger.org/">CL2</a></td></tr><tr><td><a href="http://pdis.hiit.fi/pdis/">PDIS</a></td></tr><tr><td><a href="http://hiit.fi/">HIIT</a></td></tr></table>'
+%!postproc(xhtml): '<body bgcolor="white" text="black">' '<body><table class="navi"><tr><th>Go to</th></td><tr><td><a href="http://contextlogger.github.io/">CL2</a></td></tr><tr><td><a href="http://pdis.hiit.fi/pdis/">PDIS</a></td></tr><tr><td><a href="http://hiit.fi/">HIIT</a></td></tr></table>'
 %!postproc(xhtml): '_signature_th_' '<a href="http://hiit.fi/u/hasu/">Tero Hasu</a>'
